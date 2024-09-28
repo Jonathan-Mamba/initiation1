@@ -1,45 +1,25 @@
 import math
 import icecream
 import typing
-from trees import Operation, Term, Component
+from trees import Operation, Term
 import funcs
 
 
-def get_term(operation: str, operators: typing.Iterable,  start_index: int = 0) -> tuple[str]:
-    returned_str: str = ""
-    found_operators: bool = False 
-    for i in range(start_index, len(operation)):
-        char = operation[i]
-        if char in (" ", "(", ")"):
-            continue
-
-        if char == "-" and returned_str == "":
-            returned_str = "-"
-            continue
-
-        if char == ".":
-            if "." not in returned_str:
-                returned_str += "."
-            else:
-                raise ValueError(f"trop de points dans {returned_str}")
-        
-        if char.isdigit():
-            returned_str += char
-
-        if char in operators and not found_operators and i > start_index:
-            return (returned_str, str(i), char)
-        
-    return (returned_str, str(i), "")
 
 
-def is_complete(op: Operation, operators) -> bool:
-    return not (math.isnan(op.first_term.get_result(operators)) or math.isnan(op.second_term.get_result(operators)))
 
-def combine_operations(op1: Operation, op2: Operation, operators: dict) -> Operation:
+def has_no_nan(op: Operation) -> bool:
+    if type(op.first_term) == Operation == type(op.second_term):
+        return True
+    elif type(op.first_term) == Term:
+        return not (math.isnan(op.first_term.value))
+    else:
+        return not (math.isnan(op.second_term.value))
+
+
+def combine_operations(op1: Operation, op2: Operation) -> Operation:
     """merges two operations with the same priority level"""
-    if is_complete(op1, operators) and is_complete(op2, operators):
-        return None
-    elif is_complete(op1, operators):
+    if has_no_nan(op1):
         if math.isnan(op2.first_term.get_result(None)):
             op2.first_term = op1
         else:
@@ -53,7 +33,7 @@ def combine_operations(op1: Operation, op2: Operation, operators: dict) -> Opera
         return op1
 
 
-def merge_operations(operations: typing.Iterable[Operation], operators: dict) -> Operation:
+def merge_operations(operations: typing.Iterable[Operation]) -> Operation:
     "merges len(operations) operations with the same priority level"
     if len(operations) < 2: 
         return operations[0]
@@ -61,22 +41,21 @@ def merge_operations(operations: typing.Iterable[Operation], operators: dict) ->
     has_nan: list[Operation] = [i for i in operations if i.hasnan()]
     try:
         has_not_nan: Operation = tuple(i for i in operations if not i.hasnan())[0] # ps: il ne peut y en avoir qu'un
-    except IndexError:
+    except IndexError: #si y'en a pas 
         final_op = has_nan[0]
     else:
-        final_op = combine_operations(has_not_nan, has_nan[0], operators)
+        final_op = combine_operations(has_not_nan, has_nan[0])
     
     if len(has_nan) > 1:
         for curr_op in has_nan[1::]:
-            final_op = combine_operations(final_op, curr_op, operators)
-    icecream.ic(final_op)
+            final_op = combine_operations(final_op, curr_op)
     return final_op
 
 
 def place_at_nan(op1: Operation, op2: Operation) -> bool:
     """
-    places op2 where these is nan in op1\n
-    returns wether it found nan in a branch
+    - places op2 where these is nan in op1\n
+    - returns wether it found NaN in a branch
     """
     if not op1.hasnan():
         return False
@@ -85,7 +64,7 @@ def place_at_nan(op1: Operation, op2: Operation) -> bool:
         if place_at_nan(op1.first_term, op2) is True:
             return True
         else:
-            place_at_nan(op1.second_term, op2  )    
+            place_at_nan(op1.second_term, op2)    
     elif type(op1.first_term) == Term:
         if op1.first_term.hasnan():
             op1.first_term = op2
@@ -101,70 +80,109 @@ def place_at_nan(op1: Operation, op2: Operation) -> bool:
         else:
             return False
     return False #on sait jamais
+
+
+def get_part(operation: str, operators: typing.Iterable,  start_index: int = 0) -> tuple[str]:
+    returned_string: str = ""
+    found_operators: bool = False 
+    for i in range(start_index, len(operation)):
+        char = operation[i]
+        if char in (" ", "(", ")"):
+            continue
+
+        if char == "-" and returned_string == "":
+            returned_string = "-"
+            continue
+
+        if char == ".":
+            if "." not in returned_string:
+                returned_string += "."
+            else:
+                raise ValueError(f"trop de points dans {returned_string}")
         
+        if char.isdigit():
+            returned_string += char
 
-def get_operation(operation: str, operators: typing.Iterable, priorities: dict[str, int], parenthesis: bool = False) -> Operation:
-    index = 0
-    terms: list[str] = []
-    operations: dict[int, list[Operation]] = dict.fromkeys(range(max(priorities.values()) + 1))
+        if char in operators and not found_operators and i > start_index:
+            return (returned_string, str(i), char)
+        
+    return (returned_string, str(i), "")
 
-    # creating terms
-    # in the form of: 5+5 -> ['5', '+', '5']
+
+def get_parts(input_string: str, operators: typing.Iterable):
+    index = 0   
+    parts: list[str] = [] 
     while True: 
-        term = get_term(operation, operators.keys(), index)
-        if len(terms) > 0 and terms[-1] == term[0][0] == "-":# si ya un - opérateur puis un pour négatif
-            term = (term[0][1::], term[1], term[2]) # on enlèle celui pour le négatif
-        terms.append(term[0])
-        index = int(term[1])
-        if term[2] == "":
+        part = get_part(input_string, operators, index)
+        if len(parts) > 0 and parts[-1] == part[0][0] == "-":# si ya un - opérateur puis un pour négatif
+            part = (part[0][1::], part[1], part[2]) # on enlèle celui pour le négatif
+        parts.append(part[0])
+        index = int(part[1])
+        if part[2] == "":
             break
         else:
-            terms.append(term[2])
-    icecream.ic(terms)
+            parts.append(part[2])
+    return parts
+
+def get_operation(input_string: str, operators: typing.Iterable, priorities: dict[str, int], parenthesis: bool = False) -> Operation:
     
-    if terms[0] in operators.keys() or not terms[0].isdigit():
-        print(f"SyntaxError: \"{terms[0]}\"")
+    expression_parts: list[str] = get_parts(input_string, operators)
+    operations_dict: dict[int, list[Operation]] = dict.fromkeys(range(max(priorities.values()) + 1))
+
+    # creating expression_parts
+    # in the form of: 5+5 -> ['5', '+', '5']
+    
+    icecream.ic(expression_parts)
+    
+    if expression_parts[0] in operators or not expression_parts[0].isdigit():
+        print(f"SyntaxError: \"{input_string}\"")
         quit(-1)
 
     #filling the operatons dict
     for index in range(max(priorities.values()), -1, -1):# de 2 à 0 généralement
-        for i, term in enumerate(terms):# terms(5+5) -> (0, '5'), (1, '+'), (2, '5')
-            if term in operators.keys() and 0 < i < len(terms) - 1 and priorities[term] == index:
-                if operations[priorities[term]] is None: 
-                    operations[priorities[term]] = []
+        for i, part in enumerate(expression_parts):# expression_parts(5+5) -> (0, '5'), (1, '+'), (2, '5')
+            if part in operators and 0 < i < len(expression_parts) - 1 and priorities[part] == index:
+                if operations_dict[priorities[part]] is None: 
+                    operations_dict[priorities[part]] = []
 
-                operations[priorities[term]].append(Operation(
-                    Term(float(terms[i - 1])),
-                    term,
-                    Term(float(terms[i + 1])),
+                operations_dict[priorities[part]].append(Operation(
+                    Term(float(expression_parts[i - 1])),
+                    part,
+                    Term(float(expression_parts[i + 1])),
                     parenthesis=True)
                 )
-                terms[i - 1], terms[i], terms[i + 1] = str(math.nan), None, str(math.nan) #[i-1] -> 5, [i] -> +,     
+                expression_parts[i - 1], expression_parts[i], expression_parts[i + 1] = str(math.nan), None, str(math.nan) #ex[i-1] -> 5, ex[i] -> +,     
             
-            elif term not in operators.keys(): #tkt j'avis pas envie de rajouter une couche de if
-                try: float(term)
+            elif part not in operators: #tkt j'avis pas envie de rajouter une couche de if
+                try: float(part)
                 except ValueError:
-                    print(f">> {term} n'est pas un chiffre")
+                    print(f">> {part} n'est pas un chiffre")
                     quit(-1)
                 except TypeError: pass
     
 
     #creating the binaty tree
-    for index, value in operations.items():
+    icecream.ic(operations_dict)
+    for index, value in operations_dict.items():
         if value is not None:
-            value = merge_operations(value, operators)
+            value = merge_operations(value)
             value.parenthesis = True
-            operations[index] = [value]
-    icecream.ic(operations)
+            operations_dict[index] = [value]
+    icecream.ic(operations_dict)
             
     #merging all the operatoins into one
     for i in reversed(range(max(priorities.values()))):
-        print(i)
-        if place_at_nan(operations[i][0], operations[i + 1][0]) is False:
-            print(f">> Je sais pas comment t'as fait mais ya un problème ici -> {operations[i][0]}")
-            quit(-1)
-    icecream.ic(operations)
-    return operations[min(priorities.values())][0]
+        icecream.ic(operations_dict[i], i)
+        if place_at_nan(operations_dict[i][0], operations_dict[i + 1][0]) is False:
+            print(f">> Je sais pas comment t'as fait mais ya un problème ici -> {operations_dict[i][0]}")
+            print(">> Je crois je sais enft je travaille dessus")
+            quit(1)
+
+
+    icecream.ic(operations_dict[0])
+    return operations_dict[min(priorities.values())][0]
+
+
 
 def main():
     OPERATORS: dict[str, typing.Callable] = {
@@ -188,8 +206,8 @@ def main():
     }
     
     while True:
-        operation: Operation = get_operation(input(">> "), OPERATORS, PRIORITIES)
-        result = operation.get_result(OPERATORS)
+        operation: Operation = get_operation(input(">> "), OPERATORS.keys(), PRIORITIES)
+        result: float = operation.get_result(OPERATORS)
         print(f"> {result}")
         if "y" in input(">> quit <y/n> ? "):
             break
