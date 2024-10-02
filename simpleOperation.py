@@ -1,4 +1,4 @@
-
+import math
 
 class StringOperation:
     def __init__(self, first: str, operator: str, second: str) -> None:
