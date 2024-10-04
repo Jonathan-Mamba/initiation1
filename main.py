@@ -1,6 +1,8 @@
 import typing
 from trees import ExpressionTree, Term
 from simpleOperation import StringOperation
+from trees import ExpressionTree, Term
+from simpleOperation import StringOperation
 import funcs
 
 
@@ -180,6 +182,7 @@ def main():
     }
 
     while True:
+        operation: ExpressionTree = get_operation(input(">> "), OPERATORS.keys(), PRIORITIES)
         operation: ExpressionTree = get_operation(input(">> "), OPERATORS.keys(), PRIORITIES)
         result: float = operation.get_result(OPERATORS)
         print(f"> {result}")
