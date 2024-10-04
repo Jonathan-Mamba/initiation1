@@ -1,7 +1,3 @@
-import math
-from typing import Tuple
-
-import icecream
 import typing
 from trees import ExpressionTree, Term
 from simpleOperation import StringOperation
@@ -104,8 +100,6 @@ def get_operation(input_string: str, operators: typing.Iterable, priorities: dic
             continue
 
         for j, op in enumerate(string_operations[i]):
-            icecream.ic(string_operations, expressions_dict, (i, j))
-            print()
             if op.operator == "@":
                 continue
 
@@ -124,14 +118,10 @@ def get_operation(input_string: str, operators: typing.Iterable, priorities: dic
             expressions_dict[i][0] = ExpressionTree(
                 first_term,
                 op.operator,
-                second_term,
-                True
+                second_term
             )
 
-    icecream.ic(string_operations, expressions_dict)
     final_expression = expressions_dict[min(priorities.values())][-1]
-    final_expression.set_parenthesis(True)
-    icecream.ic(final_expression)
     return final_expression
 
 
